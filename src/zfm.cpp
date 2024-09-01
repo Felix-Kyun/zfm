@@ -21,12 +21,7 @@ Zfm::Zfm() {
   // create some example bookmarks
   bookmarks.createBookMark("Home", getHomePath());
   bookmarks.createBookMark("root", fs::path("/"));
-  bookmarks.createBookMark("Current", getCurrentPath());
-  bookmarks.createBookMark("zkjrfhgblaeikjrhgoauerhgkajfvblakjfsbhvqoiuarweh",
-                           getCurrentPath());
-
-  // set the initial dir
-  currentPath = getCurrentPath();
+  bookmarks.createBookMark("Current", currentPath());
 
   // refresh variables with all the data
   refresh();
@@ -77,7 +72,7 @@ void Zfm::Render() {
   });
 
   auto fileInfoRenderer = Renderer(fileInfo, [&] {
-    FileInfo f = file.info(fs::path(fs::current_path() / "Makefile"));
+    FileInfo f = file.info(currentFile());
 
     return vbox({
 
@@ -108,10 +103,11 @@ void Zfm::Render() {
   auto menu = Menu(currentDirectoryFiles, &currentSelectedFile);
 
   auto fileSelector = Container::Horizontal({
-    menu,
+      menu,
   });
 
   auto fileSelectorRenderer = Renderer(fileSelector, [&] {
+    menu = Menu(currentDirectoryFiles, &currentSelectedFile);
     return vbox({menu->Render() | flex});
   });
 
@@ -126,7 +122,7 @@ void Zfm::Render() {
                              // file
                              // takes path from tabs[currentTab]
                              // and redners the files inside it in a menu
-                             Container::Vertical({fileSelector, fileInfo})});
+                             Container::Vertical({fileSelector})});
 
   auto main_renderer = Renderer(main_component_tree, [&] {
     return hbox({
@@ -137,7 +133,7 @@ void Zfm::Render() {
                //
                vbox({
 
-                   text(this->currentPath) | center | border,
+                   text(currentPath()) | center | border,
                    // tabs
                    hbox({
 
@@ -159,7 +155,7 @@ void Zfm::Render() {
 }
 
 void Zfm::goToPath(fs::path p) {
-  this->currentPath = p;
+  currentPath(p);
 
   // implement code to update tabs path too
   // the files renderer just renders the avaliable files in the current tab's
@@ -208,13 +204,13 @@ std::string_view FileInfo::getFileType(fs::path p) {
 
 FileInfo File::info(fs::path p) {
 
-  // if (_cache.find(p) != _cache.end()) {
-  //   return _cache[p];
-  // } else {
-  //   _cache[p] = FileInfo(p);
-  //   return _cache[p];
-  // }
-  //
+  if (_cache.find(p) != _cache.end()) {
+    return _cache[p];
+  } else {
+    _cache[p] = FileInfo(p);
+    return _cache[p];
+  }
+
   return FileInfo(p);
 }
 
@@ -222,7 +218,9 @@ void Zfm::refresh() {
   currentDirectoryFiles.clear();
   currentSelectedFile = 0;
 
-  for (auto &file : fs::directory_iterator(getCurrentPath())) {
+  for (auto &file : fs::directory_iterator(currentPath())) {
     currentDirectoryFiles.push_back(file.path().filename().string());
   }
+
+  currentLoadedPath = currentPath();
 }

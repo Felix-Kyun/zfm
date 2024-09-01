@@ -26,7 +26,7 @@ private:
 public:
   int currentTab{};
 
-  TabEntry getCurrentTab() { return entries[currentTab]; }
+  TabEntry& getCurrentTab() { return entries[currentTab]; }
 
   void createTab(std::string name, fs::path path) {
     entries.push_back(TabEntry(name, path));
@@ -59,7 +59,7 @@ public:
 class FileInfo {
 public:
   std::string name;
-  uintmax_t size;
+  uintmax_t size {};
   std::string type;
   fs::file_status status;
 
@@ -67,7 +67,8 @@ public:
     this->status = fs::status(p);
     this->name = p.filename();
     this->type = getFileType(p);
-    this->size = fs::file_size(p);
+    if (type != "Directory")
+      this->size = fs::file_size(p);
   }
 
   std::string_view getFileType(fs::path p);
@@ -75,7 +76,7 @@ public:
 
 class File {
 private:
-  std::unordered_map<fs::path, FileInfo> _cache;
+  std::unordered_map<fs::path, FileInfo&> _cache;
 
 public:
   FileInfo info(fs::path p);
@@ -89,11 +90,10 @@ private:
   ftxui::ScreenInteractive Screen = ftxui::ScreenInteractive::Fullscreen();
   BookMark bookmarks;
   Tabs tabs;
-  fs::path currentPath;
-  std::string currentFile;
   File file;
+  fs::path currentLoadedPath; // just for validation of current directory files 
   std::vector<std::string> currentDirectoryFiles;
-  int currentSelectedFile;
+  int currentSelectedFile = 0;
 
 public:
   Zfm();
@@ -102,10 +102,19 @@ public:
   fs::path getHomePath() { return fs::path(getenv("HOME")); }
 
   // get the current path of the tab
-  fs::path getCurrentPath() { return tabs.getCurrentTab().path; }
+  fs::path currentPath() { return tabs.getCurrentTab().path; }
+  fs::path currentPath(fs::path p) {
+    tabs.getCurrentTab().path = p;
+    return tabs.getCurrentTab().path;
+  }
 
   // get the full path to current file
-  fs::path getCurrentFile() { return currentPath / currentFile; }
+  fs::path currentFile() {
+
+    // refresh if the path changes 
+    if (currentPath() != currentLoadedPath) refresh();
+    return tabs.getCurrentTab().path / currentDirectoryFiles[currentSelectedFile];
+  } 
 
   // navigator
   void goToPath(fs::path p);
@@ -118,4 +127,3 @@ public:
   // construct and render the ui
   void Render();
 };
-
