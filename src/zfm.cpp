@@ -14,6 +14,7 @@ using namespace std;
 int main(int argc, char **argv) { Zfm zfm{}; }
 
 Zfm::Zfm() {
+  using namespace ftxui;
 
   // create a new tab
   tabs.createTab("Tab 1", fs::current_path());
@@ -22,23 +23,6 @@ Zfm::Zfm() {
   bookmarks.createBookMark("Home", getHomePath());
   bookmarks.createBookMark("root", fs::path("/"));
   bookmarks.createBookMark("Current", currentPath());
-
-  // refresh variables with all the data
-  refresh();
-
-  // call the renderer
-  Render();
-}
-
-void Zfm::Render() {
-
-  using namespace ftxui;
-
-  // bookmarks ui
-  // stays static for the most part
-  // unless the user adds or removes a entry
-
-  auto bookMarks = Container::Vertical({});
 
   auto bookmarkButtonStyle = ButtonOption::Animated(
       Color::Default, Color::GrayDark, Color::Default, Color::White);
@@ -58,77 +42,18 @@ void Zfm::Render() {
                        bookmarkButtonStyle) |
                    center);
   }
+  mainComponentTree->Add(bookMarks);
 
-  auto bookmarkRenderer = Renderer(bookMarks, [&] {
-    return vbox({bookMarks->Render() | vscroll_indicator |
-                 size(WIDTH, ftxui::GREATER_THAN, 20) | frame}) |
-           border;
-  });
+  // refresh variables with all the data
+  refresh();
 
-  // bottom file info ui
-  // displays info about the currently selected file
-  auto fileInfo = Container::Vertical({
-
-  });
-
-  auto fileInfoRenderer = Renderer(fileInfo, [&] {
-    FileInfo f = file.info(currentFile());
-
-    return vbox({
-
-               hbox({
-
-                   // filetype
-                   text(f.type), filler(),
-
-                   // filename
-                   text(f.name), filler(),
-
-                   // size
-                   text(std::to_string(f.size))
-
-               })
-
-           }) |
-           border | size(HEIGHT, ftxui::LESS_THAN, 5);
-  });
-
-  // most complex part ???
-  // render the file ui
-  // but whats the difficult part ??
-  // render it alone with the tabs section
-  // and guess what we need to add input keyhandlers too
-  // damn thats alot of work
-
-  auto menu = Menu(currentDirectoryFiles, &currentSelectedFile);
-
-  auto fileSelector = Container::Horizontal({
-      menu,
-  });
-
-  auto fileSelectorRenderer = Renderer(fileSelector, [&] {
-    menu = Menu(currentDirectoryFiles, &currentSelectedFile);
-    return vbox({menu->Render() | flex});
-  });
-
-  // finally just glue them all together and hand it over to fxtui::screen
-  auto main_component_tree =
-      Container::Horizontal({// bookmarks
-                             bookMarks,
-                             // tabs
-                             // sets current selected tab
-                             // by default 0 ?
-
-                             // file
-                             // takes path from tabs[currentTab]
-                             // and redners the files inside it in a menu
-                             Container::Vertical({fileSelector})});
-
-  auto main_renderer = Renderer(main_component_tree, [&] {
+  auto main_renderer = Renderer(mainComponentTree, [=] {
     return hbox({
 
                // the bookmarks menu
-               bookmarkRenderer->Render(),
+               vbox({bookMarks->Render() | vscroll_indicator |
+                     size(WIDTH, ftxui::GREATER_THAN, 20) | frame}) |
+                   border,
 
                //
                vbox({
@@ -140,18 +65,31 @@ void Zfm::Render() {
                    }),
 
                    // file selector
-                   fileSelectorRenderer->Render() | flex,
-
+                   vbox({fileSelector->Render() | flex}) | flex,
                    // fileinfo
-                   fileInfoRenderer->Render()
+
+                   vbox({
+
+                       hbox({
+
+                           // filetype
+                           text(file.info(currentFile()).type), filler(),
+
+                           // filename
+                           text(file.info(currentFile()).name), filler(),
+
+                           // size
+                           text(std::to_string(file.info(currentFile()).size))
+
+                       })
+
+                   }) | border |
+                       size(HEIGHT, ftxui::LESS_THAN, 5)
 
                }) | flex}) |
            flex;
   });
-
   Screen.Loop(main_renderer);
-
-  // Bye, Bye!!
 }
 
 void Zfm::goToPath(fs::path p) {
@@ -160,6 +98,7 @@ void Zfm::goToPath(fs::path p) {
   // implement code to update tabs path too
   // the files renderer just renders the avaliable files in the current tab's
   // path
+  refresh();
 }
 
 std::string_view FileInfo::getFileType(fs::path p) {
@@ -215,12 +154,23 @@ FileInfo File::info(fs::path p) {
 }
 
 void Zfm::refresh() {
+  using namespace ftxui;
+
+  // Screen.Fullscreen();
+
+  // reset every dynamic things
   currentDirectoryFiles.clear();
   currentSelectedFile = 0;
+  // fileSelector->Detach();
+  fileSelector->DetachAllChildren();
 
   for (auto &file : fs::directory_iterator(currentPath())) {
-    currentDirectoryFiles.push_back(file.path().filename().string());
+    string name = file.path().filename().string();
+    currentDirectoryFiles.push_back(name);
+    fileSelector->Add(Button(
+        name, [] { return; }, ButtonOption::Ascii()));
   }
 
+  // mainComponentTree->Add(ftxui::Container::Vertical({fileSelector}));
   currentLoadedPath = currentPath();
 }

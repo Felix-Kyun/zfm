@@ -3,13 +3,17 @@
 // the class itself
 
 #include <filesystem>
+#include <ftxui/component/component.hpp>
+#include <ftxui/component/component_base.hpp>
 #include <ftxui/component/screen_interactive.hpp>
+#include <memory>
 #include <string>
 #include <string_view>
 #include <unordered_map>
 #include <vector>
 
 namespace fs = std::filesystem;
+typedef std::shared_ptr<ftxui::ComponentBase> baseComp;
 
 class Tabs {
   class TabEntry {
@@ -71,12 +75,14 @@ public:
       this->size = fs::file_size(p);
   }
 
+  FileInfo() {}
+
   std::string_view getFileType(fs::path p);
 };
 
 class File {
 private:
-  std::unordered_map<fs::path, FileInfo&> _cache;
+  std::unordered_map<fs::path, FileInfo> _cache;
 
 public:
   FileInfo info(fs::path p);
@@ -94,6 +100,11 @@ private:
   fs::path currentLoadedPath; // just for validation of current directory files 
   std::vector<std::string> currentDirectoryFiles;
   int currentSelectedFile = 0;
+  baseComp fileSelector = ftxui::Container::Vertical({});
+  baseComp mainComponentTree = ftxui::Container::Horizontal({});
+  baseComp bookMarks = ftxui::Container::Vertical({});
+  baseComp fileInfo = ftxui::Container::Vertical({});
+  
 
 public:
   Zfm();
@@ -125,5 +136,5 @@ public:
   void refresh();
 
   // construct and render the ui
-  void Render();
+  // void Render();
 };
