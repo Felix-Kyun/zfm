@@ -43,6 +43,7 @@ Zfm::Zfm() {
                    center);
   }
   mainComponentTree->Add(bookMarks);
+  mainComponentTree->Add(ftxui::Container::Vertical({fileSelector}));
 
   // refresh variables with all the data
   refresh();
@@ -171,6 +172,5 @@ void Zfm::refresh() {
         name, [] { return; }, ButtonOption::Ascii()));
   }
 
-  // mainComponentTree->Add(ftxui::Container::Vertical({fileSelector}));
   currentLoadedPath = currentPath();
 }
