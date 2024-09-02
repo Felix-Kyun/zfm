@@ -23,6 +23,7 @@ Zfm::Zfm() {
   bookmarks.createBookMark("Home", getHomePath());
   bookmarks.createBookMark("root", fs::path("/"));
   bookmarks.createBookMark("Current", currentPath());
+  bookmarks.createBookMark("Config", getHomePath() / ".config");
 
   auto bookmarkButtonStyle = ButtonOption::Animated(
       Color::Default, Color::GrayDark, Color::Default, Color::White);
@@ -94,6 +95,10 @@ Zfm::Zfm() {
 }
 
 void Zfm::goToPath(fs::path p) {
+
+  // only navigate if the path is a directory
+  if (FileInfo(p).type != "Directory") return;
+
   currentPath(p);
 
   // implement code to update tabs path too
@@ -169,7 +174,9 @@ void Zfm::refresh() {
     string name = file.path().filename().string();
     currentDirectoryFiles.push_back(name);
     fileSelector->Add(Button(
-        name, [] { return; }, ButtonOption::Ascii()));
+        name, [=] {
+          goToPath(currentPath() / name);
+        }, ButtonOption::Ascii()));
   }
 
   currentLoadedPath = currentPath();

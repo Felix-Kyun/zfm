@@ -100,7 +100,7 @@ private:
   fs::path currentLoadedPath; // just for validation of current directory files 
   std::vector<std::string> currentDirectoryFiles;
   int currentSelectedFile = 0;
-  baseComp fileSelector = ftxui::Container::Vertical({});
+  baseComp fileSelector = ftxui::Container::Vertical({}, &currentSelectedFile);
   baseComp mainComponentTree = ftxui::Container::Horizontal({});
   baseComp bookMarks = ftxui::Container::Vertical({});
   baseComp fileInfo = ftxui::Container::Vertical({});
