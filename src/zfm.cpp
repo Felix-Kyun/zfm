@@ -25,8 +25,9 @@ Zfm::Zfm() {
   bookmarks.createBookMark("Current", currentPath());
   bookmarks.createBookMark("Config", getHomePath() / ".config");
 
-  auto bookmarkButtonStyle = ButtonOption::Animated(
-      Color::Default, Color::GrayDark, Color::Default, Color::White);
+  // auto bookmarkButtonStyle = ButtonOption::Animated(Color::Default,
+  // Color::GrayDark, Color::Default, Color::White);
+  auto bookmarkButtonStyle = ButtonOption::Ascii();
 
   for (auto &bookmark : bookmarks) {
 
@@ -34,6 +35,7 @@ Zfm::Zfm() {
     if (bookmark.name.size() > 10)
       bookmark.name = bookmark.name.substr(0, 7) + "...";
 
+    bookMarks->Add(Renderer([] { return separatorEmpty(); }));
     bookMarks->Add(Button(
                        bookmark.name,
                        [&] {
@@ -53,8 +55,9 @@ Zfm::Zfm() {
     return hbox({
 
                // the bookmarks menu
-               vbox({bookMarks->Render() | vscroll_indicator |
-                     size(WIDTH, ftxui::GREATER_THAN, 20) | frame}) |
+               vbox({text("Bookmarks") | center, separator(),
+                     bookMarks->Render() | vscroll_indicator |
+                         size(WIDTH, ftxui::GREATER_THAN, 20) | frame}) |
                    border,
 
                //
@@ -67,7 +70,10 @@ Zfm::Zfm() {
                    }),
 
                    // file selector
-                   vbox({fileSelector->Render() | flex}) | flex,
+                   hbox({
+                       vbox({}) | size(WIDTH, GREATER_THAN, 3),
+                       vbox({fileSelector->Render() | vscroll_indicator | frame | flex }) | flex,
+                   }) | flex,
                    // fileinfo
 
                    vbox({
@@ -97,7 +103,8 @@ Zfm::Zfm() {
 void Zfm::goToPath(fs::path p) {
 
   // only navigate if the path is a directory
-  if (FileInfo(p).type != "Directory") return;
+  if (FileInfo(p).type != "Directory")
+    return;
 
   currentPath(p);
 
@@ -170,13 +177,16 @@ void Zfm::refresh() {
   // fileSelector->Detach();
   fileSelector->DetachAllChildren();
 
+  currentDirectoryFiles.push_back("..");
+  fileSelector->Add(Button(
+      "..", [=] { goToPath(currentPath().parent_path()); },
+      ButtonOption::Ascii()));
+
   for (auto &file : fs::directory_iterator(currentPath())) {
     string name = file.path().filename().string();
     currentDirectoryFiles.push_back(name);
     fileSelector->Add(Button(
-        name, [=] {
-          goToPath(currentPath() / name);
-        }, ButtonOption::Ascii()));
+        name, [=] { goToPath(currentPath() / name); }, ButtonOption::Ascii()));
   }
 
   currentLoadedPath = currentPath();
