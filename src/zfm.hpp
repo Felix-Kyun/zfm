@@ -88,6 +88,35 @@ public:
   FileInfo info(fs::path p);
 };
 
+class OverlayManager {
+  public: 
+    class Overlay {
+      public:
+      std::string name;
+      bool enabled = false;
+      baseComp overlay;
+
+      // ctor
+      Overlay(std::string name, baseComp overlay) : name(name), overlay(overlay) {}
+    };
+
+    int OverlayEnabled{};
+
+    void addOverlay(std::string name, baseComp overlay) {
+      Overlay newOverlay(name, overlay);
+      Overlays.push_back(newOverlay);
+    }
+
+    void toggleOverlay(std::string name);
+    void CloseOverlay(std::string name);
+
+    baseComp getOverlayTree();
+    
+  private:
+    std::vector<Overlay> Overlays;
+
+};
+
 class Zfm {
 
 private:
@@ -104,6 +133,7 @@ private:
   baseComp mainComponentTree = ftxui::Container::Horizontal({});
   baseComp bookMarks = ftxui::Container::Vertical({});
   baseComp fileInfo = ftxui::Container::Vertical({});
+  OverlayManager overlayManager;
   
 
 public:

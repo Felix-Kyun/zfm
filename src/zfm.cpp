@@ -100,18 +100,43 @@ Zfm::Zfm() {
            flex;
   });
 
-  auto overlayBase = Container::Vertical({});
+  // lets write a generic widget that can be used inside overlays
+  auto helpOverlay = Container::Vertical(
 
-  int overlayEnabled{};
+      {Renderer([] { return text("Help") | center; }),
+       Renderer([] { return separator(); }),
+       Container::Vertical(
+           {Renderer([] { return text("Add some help text here") | center; }),
+            Button("Close", [&] { overlayManager.CloseOverlay("Help"); }) |
+                center})});
+  overlayManager.addOverlay("Help", helpOverlay);
+
+  auto infoOverlay = Container::Vertical(
+      {Renderer([] { return text("Info") | center; }),
+       Renderer([] { return separator(); }),
+       Container::Vertical(
+           {Renderer([] { return text("Howdy hey!") | center; }),
+            Container::Horizontal(
+                {Button("help", [&] { overlayManager.toggleOverlay("Help"); }) |
+                     center,
+                 Renderer([] { return filler(); }),
+                 Button("Close", [&] { overlayManager.CloseOverlay("Info"); }) |
+                     center})})});
+  overlayManager.addOverlay("Info", infoOverlay);
 
   auto finalTree =
-      Container::Tab({main_renderer, overlayBase}, &overlayEnabled);
+      Container::Tab({main_renderer, overlayManager.getOverlayTree()},
+                     &overlayManager.OverlayEnabled);
 
   // global keybinds
   finalTree |= CatchEvent([&](Event e) {
     if (e == Event::Character('q')) {
       Screen.ExitLoopClosure()();
       return true;
+    } else if (e == Event::Character('h')) {
+      overlayManager.toggleOverlay("Help");
+    } else if (e == Event::Character('i')) {
+      overlayManager.toggleOverlay("Info");
     }
 
     return false;
@@ -209,4 +234,47 @@ void Zfm::refresh() {
   }
 
   currentLoadedPath = currentPath();
+}
+
+void OverlayManager::toggleOverlay(std::string name) {
+  OverlayEnabled = 0;
+  for (auto &overlay : Overlays) {
+    if (overlay.enabled)
+      overlay.enabled = false;
+  }
+
+  for (auto &overlay : Overlays) {
+    if (overlay.name == name)
+      overlay.enabled = true;
+  }
+  OverlayEnabled = 1;
+}
+
+void OverlayManager::CloseOverlay(std::string name) {
+  for (auto &overlay : Overlays) {
+    if (overlay.name == name)
+      overlay.enabled = true;
+  }
+}
+
+baseComp OverlayManager::getOverlayTree() {
+  using namespace ftxui;
+  auto overlayBase = Container::Vertical({});
+
+  // iterate and append
+  for (auto overlay : Overlays) {
+    overlayBase->Add(overlay.overlay | Maybe([&] { return overlay.enabled; }));
+  }
+
+  auto overlay = Renderer(overlayBase, [&] {
+    return hbox({vbox({
+
+                     overlayBase->Render() | border | center
+
+                 }) |
+                 center}) |
+           center;
+  });
+
+  return overlay;
 }
