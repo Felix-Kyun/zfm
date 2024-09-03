@@ -72,7 +72,9 @@ Zfm::Zfm() {
                    // file selector
                    hbox({
                        vbox({}) | size(WIDTH, GREATER_THAN, 3),
-                       vbox({fileSelector->Render() | vscroll_indicator | frame | flex }) | flex,
+                       vbox({fileSelector->Render() | vscroll_indicator |
+                             frame | flex}) |
+                           flex,
                    }) | flex,
                    // fileinfo
 
@@ -97,7 +99,24 @@ Zfm::Zfm() {
                }) | flex}) |
            flex;
   });
-  Screen.Loop(main_renderer);
+
+  auto overlayBase = Container::Vertical({});
+
+  int overlayEnabled{};
+
+  auto finalTree =
+      Container::Tab({main_renderer, overlayBase}, &overlayEnabled);
+
+  // global keybinds
+  finalTree |= CatchEvent([&](Event e) {
+    if (e == Event::Character('q')) {
+      Screen.ExitLoopClosure()();
+      return true;
+    }
+
+    return false;
+  });
+  Screen.Loop(finalTree);
 }
 
 void Zfm::goToPath(fs::path p) {
