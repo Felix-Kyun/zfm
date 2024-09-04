@@ -9,6 +9,9 @@
 #include <string>
 #include <string_view>
 
+#define vpad(i) vbox({}) | size(WIDTH, GREATER_THAN, i)
+#define hpad(i) hbox({}) | size(HEIGHT, GREATER_THAN, i)
+
 using namespace std;
 
 int main(int argc, char **argv) { Zfm zfm{}; }
@@ -101,32 +104,34 @@ Zfm::Zfm() {
   });
 
   // lets write a generic widget that can be used inside overlays
-  auto helpOverlay = Container::Vertical(
+  // overlay
+  auto overlayBase = Container::Vertical({});
 
-      {Renderer([] { return text("Help") | center; }),
-       Renderer([] { return separator(); }),
-       Container::Vertical(
-           {Renderer([] { return text("Add some help text here") | center; }),
-            Button("Close", [&] { overlayManager.CloseOverlay("Help"); }) |
-                center})});
-  overlayManager.addOverlay("Help", helpOverlay);
+  overlayManager.addOverlay("Help");
+  overlayManager.addOverlay("Info");
 
-  auto infoOverlay = Container::Vertical(
-      {Renderer([] { return text("Info") | center; }),
-       Renderer([] { return separator(); }),
-       Container::Vertical(
-           {Renderer([] { return text("Howdy hey!") | center; }),
-            Container::Horizontal(
-                {Button("help", [&] { overlayManager.toggleOverlay("Help"); }) |
-                     center,
-                 Renderer([] { return filler(); }),
-                 Button("Close", [&] { overlayManager.CloseOverlay("Info"); }) |
-                     center})})});
-  overlayManager.addOverlay("Info", infoOverlay);
+  overlayBase->Add(InfoOverlay(overlayManager));
+  overlayBase->Add(HelpOverlay(overlayManager));
+
+  auto overlay = Renderer(overlayBase, [&] {
+    return hbox({vbox({text(overlayManager.getActiveName()) | center,
+                       separator(),
+                       hbox({
+                           vpad(2),
+                           vbox({
+                               hpad(1),
+                               overlayBase->Render(),
+                               hpad(1),
+                           }),
+                           vpad(2),
+                       })}) |
+                 center | border}) |
+           center;
+  });
+  // end: overlay
 
   auto finalTree =
-      Container::Tab({main_renderer, overlayManager.getOverlayTree()},
-                     &overlayManager.OverlayEnabled);
+      Container::Tab({main_renderer, overlay}, &overlayManager.OverlayEnabled);
 
   // global keybinds
   finalTree |= CatchEvent([&](Event e) {
@@ -236,8 +241,18 @@ void Zfm::refresh() {
   currentLoadedPath = currentPath();
 }
 
-void OverlayManager::toggleOverlay(std::string name) {
-  OverlayEnabled = 0;
+Overlay &OverlayManager::getOverlay(std::string name) {
+  for (auto &overlay : Overlays) {
+    if (overlay.name == name)
+      return overlay;
+  }
+  return Overlays[0];
+}
+
+bool OverlayManager::getOverlayState(std::string name) {
+  return getOverlay(name).enabled && OverlayEnabled;
+}
+void OverlayManager::openOverlay(std::string name) {
   for (auto &overlay : Overlays) {
     if (overlay.enabled)
       overlay.enabled = false;
@@ -247,34 +262,106 @@ void OverlayManager::toggleOverlay(std::string name) {
     if (overlay.name == name)
       overlay.enabled = true;
   }
+
   OverlayEnabled = 1;
 }
-
-void OverlayManager::CloseOverlay(std::string name) {
+void OverlayManager::closeOverlay() {
+  OverlayEnabled = 0;
   for (auto &overlay : Overlays) {
-    if (overlay.name == name)
-      overlay.enabled = true;
+    if (overlay.enabled)
+      overlay.enabled = false;
   }
 }
 
-baseComp OverlayManager::getOverlayTree() {
+void OverlayManager::toggleOverlay(std::string name) {
+  if (getOverlay(name).enabled)
+    closeOverlay();
+  else
+    openOverlay(name);
+}
+
+std::string OverlayManager::getActiveName() {
+  for (auto &overlay : Overlays) {
+    if (overlay.enabled)
+      return overlay.name;
+  }
+
+  return "Undefined";
+}
+
+baseComp InfoOverlay(OverlayManager &ovm) {
   using namespace ftxui;
-  auto overlayBase = Container::Vertical({});
 
-  // iterate and append
-  for (auto overlay : Overlays) {
-    overlayBase->Add(overlay.overlay | Maybe([&] { return overlay.enabled; }));
-  }
+  auto buttonHelp = Button(
+      "help", [&] { ovm.openOverlay("Help"); }, ButtonOption::Ascii());
+  auto buttonClose = Button(
+      "Close", [&] { ovm.closeOverlay(); }, ButtonOption::Ascii());
 
-  auto overlay = Renderer(overlayBase, [&] {
-    return hbox({vbox({
+  auto container = Container::Horizontal({buttonHelp, buttonClose}) |
+                   Maybe([&] { return ovm.getOverlayState("Info"); });
 
-                     overlayBase->Render() | border | center
-
-                 }) |
-                 center}) |
-           center;
+  return Renderer(container, [=, &ovm] {
+    if (!ovm.getOverlayState("Info"))
+      return vbox({});
+    if (!container->Focused())
+      buttonHelp->TakeFocus();
+    return vbox({text("Howdy Hey! Welcome to Z File Manager.") | center,
+                 hpad(1), filler(),
+                 hbox({buttonHelp->Render(), vpad(2), filler(), vpad(2),
+                       buttonClose->Render()}) |
+                     center});
   });
-
-  return overlay;
 }
+baseComp HelpOverlay(OverlayManager &ovm) {
+  using namespace ftxui;
+
+  auto buttonInfo = Button(
+      "Info", [&] { ovm.openOverlay("Info"); }, ButtonOption::Ascii());
+  auto buttonClose = Button(
+      "Close", [&] { ovm.closeOverlay(); }, ButtonOption::Ascii());
+
+  auto container = Container::Horizontal({buttonInfo, buttonClose}) |
+                   Maybe([&] { return ovm.getOverlayState("Help"); });
+
+  return Renderer(container, [=, &ovm] {
+    if (!ovm.getOverlayState("Help"))
+      return vbox({});
+
+    if (!container->Focused())
+      buttonInfo->TakeFocus();
+    return vbox(
+        {text("How may i help you when i cant help myself? :p") | center,
+         hpad(1), filler(),
+         hbox({buttonInfo->Render(), vpad(2), filler(), vpad(2),
+               buttonClose->Render()}) |
+             center});
+  });
+}
+// auto helpOverlay =
+//       Container::Vertical(
+//
+//           {Renderer([] { return text("Help") | center; }),
+//            Renderer([] { return separator(); }),
+//            Container::Vertical(
+//                {Renderer(
+//                     [] { return text("Add some help text here") | center; }),
+//                 Button("Close", [&] { overlayManager.closeOverlay(); }) |
+//                     center})}) |
+//       Maybe([&] { return overlayManager.getOverlayState("Help"); });
+
+// baseComp InfoOverlay(OverlayManager& ovm) {
+//   using namespace ftxui;
+// return Container::Vertical(
+//           {Renderer([] { return text("Howdy hey!") | center; }),
+//            Container::Horizontal(
+//                {Button(
+//                     "help", [&] { ovm.openOverlay("Help"); },
+//                     ButtonOption::Animated()) |
+//                     center,
+//                 Renderer([] { return filler(); }),
+//                 Button(
+//                     "Close", [&] { ovm.closeOverlay(); },
+//                     ButtonOption::Animated()) |
+//                     center})}) |
+//       Maybe([&] { return ovm.getOverlayState("Info"); });
+// }

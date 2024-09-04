@@ -30,7 +30,7 @@ private:
 public:
   int currentTab{};
 
-  TabEntry& getCurrentTab() { return entries[currentTab]; }
+  TabEntry &getCurrentTab() { return entries[currentTab]; }
 
   void createTab(std::string name, fs::path path) {
     entries.push_back(TabEntry(name, path));
@@ -63,7 +63,7 @@ public:
 class FileInfo {
 public:
   std::string name;
-  uintmax_t size {};
+  uintmax_t size{};
   std::string type;
   fs::file_status status;
 
@@ -88,33 +88,33 @@ public:
   FileInfo info(fs::path p);
 };
 
+class Overlay {
+public:
+  std::string name;
+  bool enabled = false;
+
+  // ctor
+  Overlay(std::string name) : name(name) {}
+};
+
 class OverlayManager {
-  public: 
-    class Overlay {
-      public:
-      std::string name;
-      bool enabled = false;
-      baseComp overlay;
+public:
+  int OverlayEnabled{};
 
-      // ctor
-      Overlay(std::string name, baseComp overlay) : name(name), overlay(overlay) {}
-    };
+  void addOverlay(std::string name) {
+    Overlay newOverlay(name);
+    Overlays.push_back(newOverlay);
+  }
 
-    int OverlayEnabled{};
+  Overlay &getOverlay(std::string name);
+  bool getOverlayState(std::string name);
+  void openOverlay(std::string name);
+  void closeOverlay();
+  void toggleOverlay(std::string name);
+  std::string getActiveName();
 
-    void addOverlay(std::string name, baseComp overlay) {
-      Overlay newOverlay(name, overlay);
-      Overlays.push_back(newOverlay);
-    }
-
-    void toggleOverlay(std::string name);
-    void CloseOverlay(std::string name);
-
-    baseComp getOverlayTree();
-    
-  private:
-    std::vector<Overlay> Overlays;
-
+private:
+  std::vector<Overlay> Overlays;
 };
 
 class Zfm {
@@ -126,7 +126,7 @@ private:
   BookMark bookmarks;
   Tabs tabs;
   File file;
-  fs::path currentLoadedPath; // just for validation of current directory files 
+  fs::path currentLoadedPath; // just for validation of current directory files
   std::vector<std::string> currentDirectoryFiles;
   int currentSelectedFile = 0;
   baseComp fileSelector = ftxui::Container::Vertical({}, &currentSelectedFile);
@@ -134,7 +134,6 @@ private:
   baseComp bookMarks = ftxui::Container::Vertical({});
   baseComp fileInfo = ftxui::Container::Vertical({});
   OverlayManager overlayManager;
-  
 
 public:
   Zfm();
@@ -152,10 +151,12 @@ public:
   // get the full path to current file
   fs::path currentFile() {
 
-    // refresh if the path changes 
-    if (currentPath() != currentLoadedPath) refresh();
-    return tabs.getCurrentTab().path / currentDirectoryFiles[currentSelectedFile];
-  } 
+    // refresh if the path changes
+    if (currentPath() != currentLoadedPath)
+      refresh();
+    return tabs.getCurrentTab().path /
+           currentDirectoryFiles[currentSelectedFile];
+  }
 
   // navigator
   void goToPath(fs::path p);
@@ -168,3 +169,6 @@ public:
   // construct and render the ui
   // void Render();
 };
+
+baseComp InfoOverlay(OverlayManager& ovm);
+baseComp HelpOverlay(OverlayManager& ovm);
