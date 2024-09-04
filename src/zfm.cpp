@@ -103,35 +103,15 @@ Zfm::Zfm() {
            flex;
   });
 
-  // lets write a generic widget that can be used inside overlays
-  // overlay
-  auto overlayBase = Container::Vertical({});
+  // overlays
 
-  overlayManager.addOverlay("Help");
-  overlayManager.addOverlay("Info");
+  overlayManager.addOverlay("Help", InfoOverlay(overlayManager));
+  overlayManager.addOverlay("Info", HelpOverlay(overlayManager));
 
-  overlayBase->Add(InfoOverlay(overlayManager));
-  overlayBase->Add(HelpOverlay(overlayManager));
-
-  auto overlay = Renderer(overlayBase, [&] {
-    return hbox({vbox({text(overlayManager.getActiveName()) | center,
-                       separator(),
-                       hbox({
-                           vpad(2),
-                           vbox({
-                               hpad(1),
-                               overlayBase->Render(),
-                               hpad(1),
-                           }),
-                           vpad(2),
-                       })}) |
-                 center | border}) |
-           center;
-  });
   // end: overlay
 
   auto finalTree =
-      Container::Tab({main_renderer, overlay}, &overlayManager.OverlayEnabled);
+      Container::Tab({main_renderer, overlayManager.getComponentTree()}, &overlayManager.OverlayEnabled);
 
   // global keybinds
   finalTree |= CatchEvent([&](Event e) {
@@ -328,7 +308,7 @@ baseComp HelpOverlay(OverlayManager &ovm) {
       return vbox({});
 
     if (!container->Focused())
-      buttonInfo->TakeFocus();
+      container->TakeFocus();
     return vbox(
         {text("How may i help you when i cant help myself? :p") | center,
          hpad(1), filler(),
@@ -337,31 +317,31 @@ baseComp HelpOverlay(OverlayManager &ovm) {
              center});
   });
 }
-// auto helpOverlay =
-//       Container::Vertical(
-//
-//           {Renderer([] { return text("Help") | center; }),
-//            Renderer([] { return separator(); }),
-//            Container::Vertical(
-//                {Renderer(
-//                     [] { return text("Add some help text here") | center; }),
-//                 Button("Close", [&] { overlayManager.closeOverlay(); }) |
-//                     center})}) |
-//       Maybe([&] { return overlayManager.getOverlayState("Help"); });
 
-// baseComp InfoOverlay(OverlayManager& ovm) {
-//   using namespace ftxui;
-// return Container::Vertical(
-//           {Renderer([] { return text("Howdy hey!") | center; }),
-//            Container::Horizontal(
-//                {Button(
-//                     "help", [&] { ovm.openOverlay("Help"); },
-//                     ButtonOption::Animated()) |
-//                     center,
-//                 Renderer([] { return filler(); }),
-//                 Button(
-//                     "Close", [&] { ovm.closeOverlay(); },
-//                     ButtonOption::Animated()) |
-//                     center})}) |
-//       Maybe([&] { return ovm.getOverlayState("Info"); });
-// }
+baseComp OverlayManager::getComponentTree() {
+  using namespace ftxui;
+
+  auto overlayBase = Container::Vertical({});
+
+  for (auto iOverlay : Overlays) {
+      overlayBase->Add(iOverlay.overlay);
+  }
+
+  auto overlay = Renderer(overlayBase, [=] {
+    return hbox({vbox({text(getActiveName()) | center,
+                       separator(),
+                       hbox({
+                           vpad(2),
+                           vbox({
+                               hpad(1),
+                               overlayBase->Render(),
+                               hpad(1),
+                           }),
+                           vpad(2),
+                       })}) |
+                 center | border}) |
+           center;
+  });
+
+  return overlay;
+}
