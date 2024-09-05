@@ -1,4 +1,6 @@
 #include "zfm.hpp"
+#include "overlays/info.hpp"
+#include "overlays/help.hpp"
 #include <filesystem>
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/component_options.hpp>
@@ -7,10 +9,7 @@
 #include <ftxui/screen/color.hpp>
 #include <ftxui/screen/screen.hpp>
 #include <string>
-#include <string_view>
 
-#define vpad(i) vbox({}) | size(WIDTH, GREATER_THAN, i)
-#define hpad(i) hbox({}) | size(HEIGHT, GREATER_THAN, i)
 
 using namespace std;
 
@@ -20,11 +19,11 @@ Zfm::Zfm() {
   using namespace ftxui;
 
   // create a new tab
-  tabs.createTab("Tab 1", fs::current_path());
+  tabs.createTab("Tab 1", std::filesystem::current_path());
 
   // create some example bookmarks
   bookmarks.createBookMark("Home", getHomePath());
-  bookmarks.createBookMark("root", fs::path("/"));
+  bookmarks.createBookMark("root", std::filesystem::path("/"));
   bookmarks.createBookMark("Current", currentPath());
   bookmarks.createBookMark("Config", getHomePath() / ".config");
 
@@ -111,7 +110,8 @@ Zfm::Zfm() {
   // end: overlay
 
   auto finalTree =
-      Container::Tab({main_renderer, overlayManager.getComponentTree()}, &overlayManager.OverlayEnabled);
+      Container::Tab({main_renderer, overlayManager.getComponentTree()},
+                     &overlayManager.OverlayEnabled);
 
   // global keybinds
   finalTree |= CatchEvent([&](Event e) {
@@ -129,7 +129,7 @@ Zfm::Zfm() {
   Screen.Loop(finalTree);
 }
 
-void Zfm::goToPath(fs::path p) {
+void Zfm::goToPath(std::filesystem::path p) {
 
   // only navigate if the path is a directory
   if (FileInfo(p).type != "Directory")
@@ -141,58 +141,6 @@ void Zfm::goToPath(fs::path p) {
   // the files renderer just renders the avaliable files in the current tab's
   // path
   refresh();
-}
-
-std::string_view FileInfo::getFileType(fs::path p) {
-  namespace fs = std::filesystem;
-
-  switch (this->status.type()) {
-  // case fs::file_type::none:
-  //     return "ERROR";
-  //     break;
-  // case fs::file_type::not_found:
-  //     return "ERROR";
-  //     break;
-  case fs::file_type::regular:
-    return "Regular file";
-    break;
-  case fs::file_type::directory:
-    return "Directory";
-    break;
-  case fs::file_type::symlink:
-    return "Symbolic link";
-    break;
-  case fs::file_type::block:
-    return "Block device";
-    break;
-  case fs::file_type::character:
-    return "Character device";
-    break;
-  case fs::file_type::fifo:
-    return "IPC pipe";
-    break;
-  case fs::file_type::socket:
-    return "IPC socket";
-    break;
-  case fs::file_type::unknown:
-    return "Error Unknown type";
-    break;
-  default:
-    return "ERROR";
-    break;
-  }
-}
-
-FileInfo File::info(fs::path p) {
-
-  if (_cache.find(p) != _cache.end()) {
-    return _cache[p];
-  } else {
-    _cache[p] = FileInfo(p);
-    return _cache[p];
-  }
-
-  return FileInfo(p);
 }
 
 void Zfm::refresh() {
@@ -211,7 +159,7 @@ void Zfm::refresh() {
       "..", [=] { goToPath(currentPath().parent_path()); },
       ButtonOption::Ascii()));
 
-  for (auto &file : fs::directory_iterator(currentPath())) {
+  for (auto &file : std::filesystem::directory_iterator(currentPath())) {
     string name = file.path().filename().string();
     currentDirectoryFiles.push_back(name);
     fileSelector->Add(Button(
@@ -221,127 +169,4 @@ void Zfm::refresh() {
   currentLoadedPath = currentPath();
 }
 
-Overlay &OverlayManager::getOverlay(std::string name) {
-  for (auto &overlay : Overlays) {
-    if (overlay.name == name)
-      return overlay;
-  }
-  return Overlays[0];
-}
 
-bool OverlayManager::getOverlayState(std::string name) {
-  return getOverlay(name).enabled && OverlayEnabled;
-}
-void OverlayManager::openOverlay(std::string name) {
-  for (auto &overlay : Overlays) {
-    if (overlay.enabled)
-      overlay.enabled = false;
-  }
-
-  for (auto &overlay : Overlays) {
-    if (overlay.name == name)
-      overlay.enabled = true;
-  }
-
-  OverlayEnabled = 1;
-}
-void OverlayManager::closeOverlay() {
-  OverlayEnabled = 0;
-  for (auto &overlay : Overlays) {
-    if (overlay.enabled)
-      overlay.enabled = false;
-  }
-}
-
-void OverlayManager::toggleOverlay(std::string name) {
-  if (getOverlay(name).enabled)
-    closeOverlay();
-  else
-    openOverlay(name);
-}
-
-std::string OverlayManager::getActiveName() {
-  for (auto &overlay : Overlays) {
-    if (overlay.enabled)
-      return overlay.name;
-  }
-
-  return "Undefined";
-}
-
-baseComp InfoOverlay(OverlayManager &ovm) {
-  using namespace ftxui;
-
-  auto buttonHelp = Button(
-      "help", [&] { ovm.openOverlay("Help"); }, ButtonOption::Ascii());
-  auto buttonClose = Button(
-      "Close", [&] { ovm.closeOverlay(); }, ButtonOption::Ascii());
-
-  auto container = Container::Horizontal({buttonHelp, buttonClose}) |
-                   Maybe([&] { return ovm.getOverlayState("Info"); });
-
-  return Renderer(container, [=, &ovm] {
-    if (!ovm.getOverlayState("Info"))
-      return vbox({});
-    if (!container->Focused())
-      buttonHelp->TakeFocus();
-    return vbox({text("Howdy Hey! Welcome to Z File Manager.") | center,
-                 hpad(1), filler(),
-                 hbox({buttonHelp->Render(), vpad(2), filler(), vpad(2),
-                       buttonClose->Render()}) |
-                     center});
-  });
-}
-baseComp HelpOverlay(OverlayManager &ovm) {
-  using namespace ftxui;
-
-  auto buttonInfo = Button(
-      "Info", [&] { ovm.openOverlay("Info"); }, ButtonOption::Ascii());
-  auto buttonClose = Button(
-      "Close", [&] { ovm.closeOverlay(); }, ButtonOption::Ascii());
-
-  auto container = Container::Horizontal({buttonInfo, buttonClose}) |
-                   Maybe([&] { return ovm.getOverlayState("Help"); });
-
-  return Renderer(container, [=, &ovm] {
-    if (!ovm.getOverlayState("Help"))
-      return vbox({});
-
-    if (!container->Focused())
-      container->TakeFocus();
-    return vbox(
-        {text("How may i help you when i cant help myself? :p") | center,
-         hpad(1), filler(),
-         hbox({buttonInfo->Render(), vpad(2), filler(), vpad(2),
-               buttonClose->Render()}) |
-             center});
-  });
-}
-
-baseComp OverlayManager::getComponentTree() {
-  using namespace ftxui;
-
-  auto overlayBase = Container::Vertical({});
-
-  for (auto iOverlay : Overlays) {
-      overlayBase->Add(iOverlay.overlay);
-  }
-
-  auto overlay = Renderer(overlayBase, [=] {
-    return hbox({vbox({text(getActiveName()) | center,
-                       separator(),
-                       hbox({
-                           vpad(2),
-                           vbox({
-                               hpad(1),
-                               overlayBase->Render(),
-                               hpad(1),
-                           }),
-                           vpad(2),
-                       })}) |
-                 center | border}) |
-           center;
-  });
-
-  return overlay;
-}

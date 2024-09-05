@@ -14,9 +14,11 @@ FetchContent_Declare(ftxui
 
 FetchContent_MakeAvailable(ftxui) 
 
+file(GLOB_RECURSE SRC_FILES src/*.cpp)
+
 project(zfm LANGUAGES CXX VERSION 1.0.0)
 add_definitions("-Wall" "-g")
-add_executable(zfm src/zfm.cpp)
+add_executable(zfm ${SRC_FILES})
 target_link_libraries(zfm 
   PRIVATE ftxui::screen
   PRIVATE ftxui::dom
