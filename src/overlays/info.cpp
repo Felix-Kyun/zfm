@@ -1,6 +1,6 @@
 #include "info.hpp"
 
-baseComp InfoOverlay(OverlayManager &ovm) {
+baseComp InfoOverlay(OverlayManager &ovm, KeybindManager &kbm) {
   using namespace ftxui;
 
   auto buttonHelp = Button(
@@ -10,6 +10,13 @@ baseComp InfoOverlay(OverlayManager &ovm) {
 
   auto container = Container::Horizontal({buttonHelp, buttonClose}) |
                    Maybe([&] { return ovm.getOverlayState("Info"); });
+
+  // register keybinds 
+  kbm.addOverlayKeybind(Event::Character('q'), "Info", [&] {
+      ovm.closeOverlay();
+      return true;
+      });
+
 
   return Renderer(container, [=, &ovm] {
     if (!ovm.getOverlayState("Info"))

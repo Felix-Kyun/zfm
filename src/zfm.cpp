@@ -1,15 +1,15 @@
 #include "zfm.hpp"
-#include "overlays/info.hpp"
 #include "overlays/help.hpp"
+#include "overlays/info.hpp"
 #include <filesystem>
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/component_options.hpp>
+#include <ftxui/component/event.hpp>
 #include <ftxui/component/screen_interactive.hpp>
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/screen/color.hpp>
 #include <ftxui/screen/screen.hpp>
 #include <string>
-
 
 using namespace std;
 
@@ -104,28 +104,32 @@ Zfm::Zfm() {
 
   // overlays
 
-  overlayManager.addOverlay("Help", InfoOverlay(overlayManager));
-  overlayManager.addOverlay("Info", HelpOverlay(overlayManager));
+  overlayManager.addOverlay("Help", InfoOverlay(overlayManager, kbm));
+  overlayManager.addOverlay("Info", HelpOverlay(overlayManager, kbm));
 
   // end: overlay
 
-  auto finalTree =
-      Container::Tab({main_renderer, overlayManager.getComponentTree()},
-                     &overlayManager.OverlayEnabled);
+  finalTree = Container::Tab({main_renderer, overlayManager.getComponentTree()},
+                             &overlayManager.OverlayEnabled);
 
-  // global keybinds
-  finalTree |= CatchEvent([&](Event e) {
-    if (e == Event::Character('q')) {
-      Screen.ExitLoopClosure()();
-      return true;
-    } else if (e == Event::Character('h')) {
-      overlayManager.toggleOverlay("Help");
-    } else if (e == Event::Character('i')) {
-      overlayManager.toggleOverlay("Info");
-    }
-
-    return false;
+  // add keybind
+  kbm.addGlobalKeybind(Event::Character('q'), [&] {
+    Screen.ExitLoopClosure()();
+    return true;
   });
+
+  kbm.addGlobalKeybind(Event::Character('h'), [&] {
+    overlayManager.openOverlay("Help");
+    return true;
+  });
+
+  kbm.addGlobalKeybind(Event::Character('i'), [&] {
+    overlayManager.openOverlay("Info");
+    return true;
+  });
+
+  kbm.apply(finalTree, overlayManager);
+
   Screen.Loop(finalTree);
 }
 
@@ -168,5 +172,3 @@ void Zfm::refresh() {
 
   currentLoadedPath = currentPath();
 }
-
-
