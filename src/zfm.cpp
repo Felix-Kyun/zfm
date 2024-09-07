@@ -153,22 +153,22 @@ void Zfm::refresh() {
   // Screen.Fullscreen();
 
   // reset every dynamic things
-  currentDirectoryFiles.clear();
-  currentSelectedFile = 0;
+  file.currentDirectoryFiles.clear();
+  file.currentSelectedFile = 0;
   // fileSelector->Detach();
   fileSelector->DetachAllChildren();
 
-  currentDirectoryFiles.push_back("..");
+  file.currentDirectoryFiles.push_back("..");
   fileSelector->Add(Button(
       "..", [=] { goToPath(currentPath().parent_path()); },
       ButtonOption::Ascii()));
 
   for (auto &file : std::filesystem::directory_iterator(currentPath())) {
     string name = file.path().filename().string();
-    currentDirectoryFiles.push_back(name);
+    this->file.currentDirectoryFiles.push_back(name);
     fileSelector->Add(Button(
         name, [=] { goToPath(currentPath() / name); }, ButtonOption::Ascii()));
   }
 
-  currentLoadedPath = currentPath();
+  file.currentLoadedPath = currentPath();
 }

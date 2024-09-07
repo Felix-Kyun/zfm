@@ -11,12 +11,11 @@ baseComp InfoOverlay(OverlayManager &ovm, KeybindManager &kbm) {
   auto container = Container::Horizontal({buttonHelp, buttonClose}) |
                    Maybe([&] { return ovm.getOverlayState("Info"); });
 
-  // register keybinds 
+  // register keybinds
   kbm.addOverlayKeybind(Event::Character('q'), "Info", [&] {
-      ovm.closeOverlay();
-      return true;
-      });
-
+    ovm.closeOverlay();
+    return true;
+  });
 
   return Renderer(container, [=, &ovm] {
     if (!ovm.getOverlayState("Info"))

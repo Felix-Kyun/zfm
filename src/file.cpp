@@ -39,7 +39,7 @@ std::string_view FileInfo::getFileType(std::filesystem::path p) {
   }
 }
 
-FileInfo File::info(std::filesystem::path p) {
+FileInfo FileManager::info(std::filesystem::path p) {
 
   if (_cache.find(p) != _cache.end()) {
     return _cache[p];

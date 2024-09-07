@@ -2,6 +2,7 @@
 #include <filesystem>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 class FileInfo {
 public:
@@ -23,10 +24,20 @@ public:
   std::string_view getFileType(std::filesystem::path p);
 };
 
-class File {
+class FileManager {
 private:
   std::unordered_map<std::filesystem::path, FileInfo> _cache;
 
 public:
+  int currentSelectedFile = 0;
+  std::filesystem::path currentLoadedPath;
+  std::vector<std::string> currentDirectoryFiles;
   FileInfo info(std::filesystem::path p);
+
+  // get the home dir
+  std::filesystem::path getHomePath() {
+    return std::filesystem::path(getenv("HOME"));
+  }
+
+  FileInfo getFileInfo(std::filesystem::path p);
 };

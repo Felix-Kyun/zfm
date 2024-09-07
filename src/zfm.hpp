@@ -10,36 +10,29 @@
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/component_base.hpp>
 #include <ftxui/component/screen_interactive.hpp>
-#include <string>
 
 class Zfm {
 
 private:
   std::string_view _appName{"Zfm"};
   float _version{1.0};
+
   ftxui::ScreenInteractive Screen = ftxui::ScreenInteractive::Fullscreen();
   BookMark bookmarks;
   Tabs tabs;
-  File file;
-  std::filesystem::path
-      currentLoadedPath; // just for validation of current directory files
-  std::vector<std::string> currentDirectoryFiles;
-  int currentSelectedFile = 0;
-  baseComp fileSelector = ftxui::Container::Vertical({}, &currentSelectedFile);
+  FileManager file;
+  OverlayManager overlayManager;
+  KeybindManager kbm;
+
+  baseComp fileSelector = ftxui::Container::Vertical({}, &file.currentSelectedFile);
   baseComp mainComponentTree = ftxui::Container::Horizontal({});
   baseComp bookMarks = ftxui::Container::Vertical({});
   baseComp fileInfo = ftxui::Container::Vertical({});
   baseComp finalTree; // assign beffore using global binds
-  OverlayManager overlayManager;
-  KeybindManager kbm;
+
 
 public:
   Zfm();
-
-  // get the home dir
-  std::filesystem::path getHomePath() {
-    return std::filesystem::path(getenv("HOME"));
-  }
 
   // get the current path of the tab
   std::filesystem::path currentPath() { return tabs.getCurrentTab().path; }
@@ -52,24 +45,16 @@ public:
   std::filesystem::path currentFile() {
 
     // refresh if the path changes
-    if (currentPath() != currentLoadedPath)
+    if (currentPath() != file.currentLoadedPath)
       refresh();
     return tabs.getCurrentTab().path /
-           currentDirectoryFiles[currentSelectedFile];
+           file.currentDirectoryFiles[file.currentSelectedFile];
   }
 
   // navigator
   void goToPath(std::filesystem::path p);
 
-  FileInfo getFileInfo(std::filesystem::path p);
-
   // refresh
   void refresh();
-
-  // construct and render the ui
-  // void Render();
-
-  // keybinds
-  // defined in keybinds.cpp
 
 };
