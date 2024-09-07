@@ -22,10 +22,10 @@ Zfm::Zfm() {
   tabs.createTab("Tab 1", std::filesystem::current_path());
 
   // create some example bookmarks
-  bookmarks.createBookMark("Home", getHomePath());
+  bookmarks.createBookMark("Home", file.getHomePath());
   bookmarks.createBookMark("root", std::filesystem::path("/"));
   bookmarks.createBookMark("Current", currentPath());
-  bookmarks.createBookMark("Config", getHomePath() / ".config");
+  bookmarks.createBookMark("Config", file.getHomePath() / ".config");
 
   // auto bookmarkButtonStyle = ButtonOption::Animated(Color::Default,
   // Color::GrayDark, Color::Default, Color::White);
