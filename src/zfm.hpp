@@ -15,7 +15,7 @@ class Zfm {
 
 private:
   std::string_view _appName{"Zfm"};
-  float _version{1.0};
+  float _version{0.1};
 
   ftxui::ScreenInteractive Screen = ftxui::ScreenInteractive::Fullscreen();
   BookMark bookmarks;
