@@ -1,5 +1,6 @@
 // definations for zfm
 
+#pragma once
 #include "bookmark.hpp"
 #include "file.hpp"
 #include "keybind.hpp"
@@ -10,6 +11,7 @@
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/component_base.hpp>
 #include <ftxui/component/screen_interactive.hpp>
+#include <functional>
 
 class Zfm {
 
@@ -32,6 +34,9 @@ private:
 
 
 public:
+  std::string alertMessage;
+  void quit() { Screen.ExitLoopClosure()(); }
+
   Zfm();
 
   // get the current path of the tab

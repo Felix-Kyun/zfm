@@ -1,4 +1,6 @@
 #include "zfm.hpp"
+#include "overlays/delete.hpp"
+#include "overlays/alert.hpp"
 #include "overlays/help.hpp"
 #include "overlays/info.hpp"
 #include <filesystem>
@@ -106,6 +108,8 @@ Zfm::Zfm() {
 
   overlayManager.addOverlay("Help", InfoOverlay(overlayManager, kbm));
   overlayManager.addOverlay("Info", HelpOverlay(overlayManager, kbm));
+  overlayManager.addOverlay("Delete File", DeleteOverlay(overlayManager, kbm, *this));
+  overlayManager.addOverlay("Alert", AlertOverlay(overlayManager, kbm, this));
 
   // end: overlay
 
@@ -113,18 +117,39 @@ Zfm::Zfm() {
                              &overlayManager.OverlayEnabled);
 
   // add keybind
-  kbm.addGlobalKeybind(Event::Character('q'), [&] {
+  kbm.addGlobalKeybind(Event::q, [&] {
     Screen.ExitLoopClosure()();
     return true;
   });
 
-  kbm.addGlobalKeybind(Event::Character('h'), [&] {
+  kbm.addGlobalKeybind(Event::h, [&] {
     overlayManager.openOverlay("Help");
     return true;
   });
 
-  kbm.addGlobalKeybind(Event::Character('i'), [&] {
+  kbm.addGlobalKeybind(Event::i, [&] {
     overlayManager.openOverlay("Info");
+    return true;
+  });
+
+  kbm.addGlobalKeybind(Event::d, [&] {
+    overlayManager.openOverlay("Delete File");
+    return true;
+  });
+
+  kbm.addGlobalKeybind(Event::e, [&] {
+    overlayManager.openOverlay("Alert");
+    return true;
+  });
+
+  // some nav binds
+  kbm.addGlobalKeybind(Event::G, [&] {
+    file.currentSelectedFile = file.currentDirectoryFiles.size() - 1;
+    return true;
+  });
+
+  kbm.addGlobalKeybind(Event::g, [&] {
+    file.currentSelectedFile = 0;
     return true;
   });
 
