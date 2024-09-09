@@ -24,6 +24,7 @@ baseComp RenameOverlay(OverlayManager &ovm, KeybindManager &kbm, Zfm &zfm) {
     if (zfm.selectedFileName != "")
       try {
         std::filesystem::rename(zfm.currentFile(), zfm.selectedFileName);
+        std::filesystem::remove(zfm.currentFile());
         zfm.refresh();
 
       } catch (std::filesystem::filesystem_error &err) {
