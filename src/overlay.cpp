@@ -31,6 +31,7 @@ void OverlayManager::closeOverlay() {
     if (overlay.enabled)
       overlay.enabled = false;
   }
+
 }
 
 void OverlayManager::toggleOverlay(std::string name) {

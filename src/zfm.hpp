@@ -26,15 +26,16 @@ private:
   OverlayManager overlayManager;
   KeybindManager kbm;
 
-  baseComp fileSelector = ftxui::Container::Vertical({}, &file.currentSelectedFile);
+  baseComp fileSelector =
+      ftxui::Container::Vertical({}, &file.currentSelectedFile);
   baseComp mainComponentTree = ftxui::Container::Horizontal({});
   baseComp bookMarks = ftxui::Container::Vertical({});
   baseComp fileInfo = ftxui::Container::Vertical({});
   baseComp finalTree; // assign beffore using global binds
 
-
 public:
-  std::string alertMessage;
+  std::string alertMessage;               // for alert overlay
+  std::string selectedFileName = "Felix"; // for rename
   void quit() { Screen.ExitLoopClosure()(); }
 
   Zfm();
@@ -59,7 +60,11 @@ public:
   // navigator
   void goToPath(std::filesystem::path p);
 
+  int width() { return Screen.dimx(); }
+  int height() { return Screen.dimy(); }
+
   // refresh
   void refresh();
 
+  void refocus() { fileSelector->TakeFocus(); }
 };

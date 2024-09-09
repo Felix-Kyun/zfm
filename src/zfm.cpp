@@ -3,6 +3,7 @@
 #include "overlays/alert.hpp"
 #include "overlays/help.hpp"
 #include "overlays/info.hpp"
+#include "overlays/rename.hpp"
 #include <filesystem>
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/component_options.hpp>
@@ -104,12 +105,16 @@ Zfm::Zfm() {
            flex;
   });
 
+  // focus on file tree initially
+  fileSelector->TakeFocus();
+
   // overlays
 
   overlayManager.addOverlay("Help", InfoOverlay(overlayManager, kbm));
   overlayManager.addOverlay("Info", HelpOverlay(overlayManager, kbm));
   overlayManager.addOverlay("Delete File", DeleteOverlay(overlayManager, kbm, *this));
   overlayManager.addOverlay("Alert", AlertOverlay(overlayManager, kbm, this));
+  overlayManager.addOverlay("Rename", RenameOverlay(overlayManager, kbm, *this));
 
   // end: overlay
 
@@ -139,6 +144,11 @@ Zfm::Zfm() {
 
   kbm.addGlobalKeybind(Event::e, [&] {
     overlayManager.openOverlay("Alert");
+    return true;
+  });
+
+  kbm.addGlobalKeybind(Event::r, [&] {
+    overlayManager.openOverlay("Rename");
     return true;
   });
 
