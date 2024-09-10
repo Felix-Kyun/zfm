@@ -16,13 +16,22 @@ private:
   std::vector<TabEntry> entries;
 
 public:
-  int currentTab{};
+  int currentTab = 0;
 
   TabEntry &getCurrentTab() { return entries[currentTab]; }
 
   void createTab(std::string name, std::filesystem::path path) {
     entries.push_back(TabEntry(name, path));
   }
+
+  auto getTabNameList() {
+    return entries;
+  }
+
+  int tabSize() {
+    return static_cast<int>(entries.size());
+  }
+
 };
 
 

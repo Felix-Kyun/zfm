@@ -6,6 +6,7 @@
 #include "overlays/info.hpp"
 #include "overlays/new.hpp"
 #include "overlays/rename.hpp"
+#include "overlays/tab.hpp"
 #include <filesystem>
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/component_options.hpp>
@@ -120,6 +121,7 @@ Zfm::Zfm() {
   overlayManager.addOverlay("Rename",
                             RenameOverlay(overlayManager, kbm, *this));
   overlayManager.addOverlay("New", NewOverlay(overlayManager, kbm, *this));
+  overlayManager.addOverlay("Tab", TabOverlay(overlayManager, kbm, tabs, *this));
 
   // end: overlay
 

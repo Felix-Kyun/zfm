@@ -37,4 +37,9 @@ void applyGlobalKeybinds(Zfm &zfm) {
     return true;
   });
 
+  zfm.addGlobalKeybind(Event::t, [&] {
+    zfm.openOverlay("Tab");
+    return true;
+  });
+
 }
