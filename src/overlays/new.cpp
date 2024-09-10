@@ -1,23 +1,16 @@
-#include "rename.hpp"
+#include "new.hpp"
 #include <cmath>
 #include <filesystem>
-#include <ftxui/component/component.hpp>
-#include <ftxui/component/component_options.hpp>
-#include <ftxui/component/event.hpp>
-#include <ftxui/dom/elements.hpp>
-#include <memory>
-#include <string>
+#include <fstream>
 
-baseComp RenameOverlay(OverlayManager &ovm, KeybindManager &kbm, Zfm &zfm) {
+baseComp NewOverlay(OverlayManager &ovm, KeybindManager &kbm, Zfm &zfm) {
   using namespace ftxui;
 
   std::shared_ptr<bool> done = std::make_shared<bool>(0);
-  std::shared_ptr<int> pos = std::make_shared<int>(0);
 
   InputOption opts = InputOption::Spacious();
   opts.multiline = false;
   // opts.insert = false;
-  opts.cursor_position = *pos;
   opts.on_enter = [&, done] {
     ovm.closeOverlay();
     *done = false;
@@ -25,8 +18,21 @@ baseComp RenameOverlay(OverlayManager &ovm, KeybindManager &kbm, Zfm &zfm) {
 
     if (zfm.selectedFileName != "")
       try {
-        std::filesystem::rename(zfm.currentFile(), zfm.selectedFileName);
-        std::filesystem::remove(zfm.currentFile());
+        std::filesystem::path filePath{zfm.selectedFileName};
+        filePath = zfm.currentPath() / filePath;
+        std::filesystem::create_directories(filePath.parent_path());
+
+        // handle new file creation here
+        if (zfm.selectedFileName[zfm.selectedFileName.size() - 1] == '/') {
+          // create a directory
+          std::filesystem::create_directory(filePath);
+
+        } else {
+          // create a file in the directory
+          std::ofstream file{filePath};
+          file.close();
+        }
+
         zfm.refresh();
 
       } catch (std::filesystem::filesystem_error &err) {
@@ -37,9 +43,9 @@ baseComp RenameOverlay(OverlayManager &ovm, KeybindManager &kbm, Zfm &zfm) {
     return true;
   };
 
-  auto nameInput = Input(&zfm.selectedFileName, "Enter New Name...", opts);
+  auto nameInput = Input(&zfm.selectedFileName, "Enter File Name...", opts);
 
-  kbm.addOverlayKeybind(Event::Escape, "Rename", [&, done] {
+  kbm.addOverlayKeybind(Event::Escape, "New", [&, done] {
     ovm.closeOverlay();
     *done = false;
     zfm.refocus();
@@ -51,11 +57,11 @@ baseComp RenameOverlay(OverlayManager &ovm, KeybindManager &kbm, Zfm &zfm) {
   });
 
   return Renderer(container, [=, &ovm, &zfm] {
-    if (!ovm.getOverlayState("Rename"))
+    if (!ovm.getOverlayState("New"))
       return vbox({});
 
     if (!*done) {
-      zfm.selectedFileName = zfm.currentFile().filename();
+      zfm.selectedFileName = "";
       container->TakeFocus();
       *done = true;
     }

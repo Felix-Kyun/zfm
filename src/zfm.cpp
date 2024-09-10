@@ -1,8 +1,10 @@
 #include "zfm.hpp"
-#include "overlays/delete.hpp"
+#include "globalKeybinds.hpp"
 #include "overlays/alert.hpp"
+#include "overlays/delete.hpp"
 #include "overlays/help.hpp"
 #include "overlays/info.hpp"
+#include "overlays/new.hpp"
 #include "overlays/rename.hpp"
 #include <filesystem>
 #include <ftxui/component/component.hpp>
@@ -112,45 +114,17 @@ Zfm::Zfm() {
 
   overlayManager.addOverlay("Help", InfoOverlay(overlayManager, kbm));
   overlayManager.addOverlay("Info", HelpOverlay(overlayManager, kbm));
-  overlayManager.addOverlay("Delete File", DeleteOverlay(overlayManager, kbm, *this));
+  overlayManager.addOverlay("Delete File",
+                            DeleteOverlay(overlayManager, kbm, *this));
   overlayManager.addOverlay("Alert", AlertOverlay(overlayManager, kbm, this));
-  overlayManager.addOverlay("Rename", RenameOverlay(overlayManager, kbm, *this));
+  overlayManager.addOverlay("Rename",
+                            RenameOverlay(overlayManager, kbm, *this));
+  overlayManager.addOverlay("New", NewOverlay(overlayManager, kbm, *this));
 
   // end: overlay
 
   finalTree = Container::Tab({main_renderer, overlayManager.getComponentTree()},
                              &overlayManager.OverlayEnabled);
-
-  // add keybind
-  kbm.addGlobalKeybind(Event::q, [&] {
-    Screen.ExitLoopClosure()();
-    return true;
-  });
-
-  kbm.addGlobalKeybind(Event::h, [&] {
-    overlayManager.openOverlay("Help");
-    return true;
-  });
-
-  kbm.addGlobalKeybind(Event::i, [&] {
-    overlayManager.openOverlay("Info");
-    return true;
-  });
-
-  kbm.addGlobalKeybind(Event::d, [&] {
-    overlayManager.openOverlay("Delete File");
-    return true;
-  });
-
-  kbm.addGlobalKeybind(Event::e, [&] {
-    overlayManager.openOverlay("Alert");
-    return true;
-  });
-
-  kbm.addGlobalKeybind(Event::r, [&] {
-    overlayManager.openOverlay("Rename");
-    return true;
-  });
 
   // some nav binds
   kbm.addGlobalKeybind(Event::G, [&] {
@@ -162,6 +136,24 @@ Zfm::Zfm() {
     file.currentSelectedFile = 0;
     return true;
   });
+
+  kbm.addGlobalKeybind(Event::q, [&] {
+    Screen.ExitLoopClosure()();
+    return true;
+  });
+
+  kbm.addGlobalKeybind(Event::c, [&] {
+    selectedFilePath = currentFile();
+    mode = "copy";
+    return true;
+  });
+  kbm.addGlobalKeybind(Event::x, [&] {
+    selectedFilePath = currentFile();
+    mode = "move";
+    return true;
+  });
+
+  applyGlobalKeybinds(*this);
 
   kbm.apply(finalTree, overlayManager);
 

@@ -36,6 +36,8 @@ private:
 public:
   std::string alertMessage;               // for alert overlay
   std::string selectedFileName = "Felix"; // for rename
+  std::filesystem::path selectedFilePath; // for copy and move
+  std::string mode;
   void quit() { Screen.ExitLoopClosure()(); }
 
   Zfm();
@@ -67,4 +69,12 @@ public:
   void refresh();
 
   void refocus() { fileSelector->TakeFocus(); }
+
+  void addGlobalKeybind(ftxui::Event event, std::function<bool ()> f) {
+    kbm.addGlobalKeybind(event, f);
+  }
+
+  void openOverlay(std::string name) {
+    overlayManager.openOverlay(name);
+  } 
 };
