@@ -14,7 +14,7 @@ void createTabMenu(OverlayManager &ovm, KeybindManager &kbm, Tabs &tab,
   menu->DetachAllChildren();
   auto entries = tab.getTabNameList();
 
-  for (auto i : std::views::iota(0, static_cast<int>(entries.size())))
+  for (auto i : std::views::iota(0, tab.tabSize()))
     menu->Add(Button(
                   entries[i].name,
                   [&, i] {
@@ -44,9 +44,7 @@ baseComp TabOverlay(OverlayManager &ovm, KeybindManager &kbm, Tabs &tab,
                     Zfm &zfm) {
   using namespace ftxui;
 
-  std::shared_ptr<int> selected = std::make_shared<int>(tab.currentTab);
-
-  auto menu = Container::Vertical({}, &*(selected));
+  auto menu = Container::Vertical({}, &tab.container_selected);
 
   createTabMenu(ovm, kbm, tab, zfm, menu);
 

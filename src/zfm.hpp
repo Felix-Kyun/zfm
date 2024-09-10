@@ -46,6 +46,7 @@ public:
   std::filesystem::path currentPath() { return tabs.getCurrentTab().path; }
   std::filesystem::path currentPath(std::filesystem::path p) {
     tabs.getCurrentTab().path = p;
+    tabs.setCurrentTabPath(p);
     return tabs.getCurrentTab().path;
   }
 

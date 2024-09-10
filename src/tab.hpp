@@ -17,8 +17,11 @@ private:
 
 public:
   int currentTab = 0;
+  int container_selected = 0;
 
-  TabEntry &getCurrentTab() { return entries[currentTab]; }
+  TabEntry getCurrentTab() { return entries[currentTab]; }
+
+  void setCurrentTabPath(std::filesystem::path p) { entries[currentTab].path = p;} 
 
   void createTab(std::string name, std::filesystem::path path) {
     entries.push_back(TabEntry(name, path));
